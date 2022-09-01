@@ -52,9 +52,6 @@ class RazorpayStream(HttpStream, ABC):
         :return If there is another page in the result, a mapping (e.g: dict) containing information needed to query the next page in the response.
                 If there are no more pages in the result, return None.
         """
-
-        # count, skip = limit, offset
-
         response_json = response.json()
         num_records = response_json.get('count') or len(response_json['items'])
 
@@ -67,10 +64,6 @@ class RazorpayStream(HttpStream, ABC):
     def request_params(
         self, stream_state: Mapping[str, Any], stream_slice: Mapping[str, any] = None, next_page_token: Mapping[str, Any] = None
     ) -> MutableMapping[str, Any]:
-        """
-        TODO: Override this method to define any query parameters to be set. Remove this method if you don't need to define request params.
-        Usually contains common params e.g. pagination size etc.
-        """
         params = {"count": self.page_limit}
 
         if next_page_token:
@@ -79,10 +72,6 @@ class RazorpayStream(HttpStream, ABC):
         return params
 
     def parse_response(self, response: requests.Response, **kwargs) -> Iterable[Mapping]:
-        """
-        TODO: Override this method to define how a response is parsed.
-        :return an iterable containing each record in the response
-        """
         response_json = response.json()
 
         for item in response_json['items']:
@@ -97,7 +86,7 @@ class IncrementalRazorpayStream(RazorpayStream, ABC):
     """
 
     # TODO: Fill in to checkpoint stream reads after N records. This prevents re-reading of data if the stream fails for any reason.
-    state_checkpoint_interval = None
+    state_checkpoint_interval = 100 # initial pass, not sure what's optimal here
 
     @property
     def cursor_field(self) -> str:
@@ -118,45 +107,21 @@ class IncrementalRazorpayStream(RazorpayStream, ABC):
         return {}
 
 
-class Settlements(IncrementalRazorpayStream):
-    """
-    TODO: Change class name to match the table/data source this stream corresponds to.
-    """
-
-    # TODO: Fill in the cursor_field. Required.
-    cursor_field = "start_date"
-
+class Settlements(RazorpayStream):
     # TODO: Fill in the primary key. Required. This is usually a unique field in the stream, like an ID or a timestamp.
-    primary_key = "employee_id"
+    primary_key = "id"
 
-    def path(self, **kwargs) -> str:
+    def path(
+        self,
+        stream_state: Mapping[str, Any] = None,
+        stream_slice: Mapping[str, Any] = None,
+        next_page_token: Mapping[str, Any] = None
+    ) -> str:
         """
-        TODO: Override this method to define the path this stream corresponds to. E.g. if the url is https://example-api.com/v1/employees then this should
-        return "single". Required.
+        TODO: Override this method to define the path this stream corresponds to. E.g. if the url is https://example-api.com/v1/customers then this
+        should return "customers". Required.
         """
-        return "employees"
-
-    def stream_slices(self, stream_state: Mapping[str, Any] = None, **kwargs) -> Iterable[Optional[Mapping[str, any]]]:
-        """
-        TODO: Optionally override this method to define this stream's slices. If slicing is not needed, delete this method.
-
-        Slices control when state is saved. Specifically, state is saved after a slice has been fully read.
-        This is useful if the API offers reads by groups or filters, and can be paired with the state object to make reads efficient. See the "concepts"
-        section of the docs for more information.
-
-        The function is called before reading any records in a stream. It returns an Iterable of dicts, each containing the
-        necessary data to craft a request for a slice. The stream state is usually referenced to determine what slices need to be created.
-        This means that data in a slice is usually closely related to a stream's cursor_field and stream_state.
-
-        An HTTP request is made for each returned slice. The same slice can be accessed in the path, request_params and request_header functions to help
-        craft that specific request.
-
-        For example, if https://example-api.com/v1/employees offers a date query params that returns data for that particular day, one way to implement
-        this would be to consult the stream state object for the last synced date, then return a slice containing each date from the last synced date
-        till now. The request_params function would then grab the date from the stream_slice and make it part of the request by injecting it into
-        the date query param.
-        """
-        raise NotImplementedError("Implement stream slices or delete this method!")
+        return "settlements"
 
 
 class Customers(RazorpayStream):

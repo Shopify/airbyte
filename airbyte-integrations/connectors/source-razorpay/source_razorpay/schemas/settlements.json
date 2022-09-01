@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "entity": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["created", "processed", "failed"]
+    },
+    "fees": {
+      "type": "number"
+    },
+    "tax": {
+      "type": "number"
+    },
+    "utr": {
+      "type": "string",
+      "description": "The Unique Transaction Reference (UTR) number available across banks, which can be used to track a particular settlement in your bank account.",
+      "example": "1597813219e1pq6w"
+    },
+    "created_at": {
+      "type": "number",
+      "description": "Unix timestamp at which the settlement transaction was created."
+    }
+  }
+}
