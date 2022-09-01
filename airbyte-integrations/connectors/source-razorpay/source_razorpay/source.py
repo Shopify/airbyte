@@ -47,4 +47,6 @@ class SourceRazorpay(AbstractSource):
         :param config: A Mapping of the user input configuration as defined in the connector spec.
         """
         auth = requests.auth.HTTPBasicAuth(config['api_key_id'], config['api_key_secret'])
-        return [Settlements(authenticator=auth)]
+        kwargs = {'authenticator': auth, 'start_date': config['start_date']}
+        return [Settlements(**kwargs)]
+        #return [Settlements(authenticator=auth)]

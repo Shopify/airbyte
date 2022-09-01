@@ -1,7 +1,7 @@
 from abc import ABC
-import requests
-
+from datetime import date, datetime, timedelta
 from typing import Any, Iterable, Mapping, MutableMapping, Optional
+import requests
 
 from airbyte_cdk.sources.streams.http import HttpStream
 
@@ -37,6 +37,10 @@ class RazorpayStream(HttpStream, ABC):
     page_limit = 10
     current_offset = 0
 
+    def __init__(self, authenticator: requests.auth.HTTPBasicAuth, start_date: str):
+        self.start_date = date.fromisoformat(start_date)
+        super().__init__(authenticator=authenticator)
+
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
         """
         TODO: Override this method to define a pagination strategy. If you will not be using pagination, no action is required - just return None.
@@ -64,7 +68,8 @@ class RazorpayStream(HttpStream, ABC):
     def request_params(
         self, stream_state: Mapping[str, Any], stream_slice: Mapping[str, any] = None, next_page_token: Mapping[str, Any] = None
     ) -> MutableMapping[str, Any]:
-        params = {"count": self.page_limit}
+        start_date_epoch_seconds = int(self.start_date.timestamp())
+        params = {"count": self.page_limit, "from": start_date_epoch_seconds}
 
         if next_page_token:
             params = {**params, **next_page_token}
@@ -108,7 +113,6 @@ class IncrementalRazorpayStream(RazorpayStream, ABC):
 
 
 class Settlements(RazorpayStream):
-    # TODO: Fill in the primary key. Required. This is usually a unique field in the stream, like an ID or a timestamp.
     primary_key = "id"
 
     def path(
