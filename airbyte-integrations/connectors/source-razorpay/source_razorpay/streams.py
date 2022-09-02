@@ -1,5 +1,5 @@
 from abc import ABC
-from datetime import date, datetime, timedelta
+from datetime import datetime
 from typing import Any, Iterable, Mapping, MutableMapping, Optional
 import requests
 
@@ -37,9 +37,10 @@ class RazorpayStream(HttpStream, ABC):
     page_limit = 10
     current_offset = 0
 
-    def __init__(self, authenticator: requests.auth.HTTPBasicAuth, start_date: str):
-        self.start_date = date.fromisoformat(start_date)
-        super().__init__(authenticator=authenticator)
+    def __init__(self, start_date: str, **kwargs):
+        #self.start_date = date.fromisoformat(start_date)
+        self.start_date = datetime.strptime(start_date, "%Y-%m-%dT%H:%M:%SZ")
+        super().__init__(**kwargs)
 
     def next_page_token(self, response: requests.Response) -> Optional[Mapping[str, Any]]:
         """

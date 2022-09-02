@@ -2,11 +2,15 @@
 # Copyright (c) 2022 Airbyte, Inc., all rights reserved.
 #
 
+from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import MagicMock
 
 import pytest
-from source_razorpay.source import RazorpayStream
+from source_razorpay.streams import RazorpayStream
+
+
+
 
 
 @pytest.fixture
@@ -17,12 +21,19 @@ def patch_base_class(mocker):
     mocker.patch.object(RazorpayStream, "__abstractmethods__", set())
 
 
-def test_request_params(patch_base_class):
-    stream = RazorpayStream()
-    # TODO: replace this with your input parameters
-    inputs = {"stream_slice": None, "stream_state": None, "next_page_token": None}
-    # TODO: replace this with your expected request parameters
-    expected_params = {}
+@pytest.fixture(name="config")
+def config_fixture():
+    config = {"authenticator": "authenticator", "account_id": "123456", "start_date": "2022-08-25T12:30:55Z"}
+    return config
+
+
+def test_request_params(patch_base_class, config):
+    stream = RazorpayStream(authenticator=config["authenticator"], start_date=config["start_date"])
+    next_page_token = {"skip": 50}
+    inputs = {"stream_slice": None, "stream_state": None, "next_page_token": next_page_token}
+    expected_from_timestamp = datetime.strptime(config["start_date"], "%Y-%m-%dT%H:%M:%SZ").timestamp()
+
+    expected_params = {"count": 10, "from": expected_from_timestamp, "skip": 50}
     assert stream.request_params(**inputs) == expected_params
 
 

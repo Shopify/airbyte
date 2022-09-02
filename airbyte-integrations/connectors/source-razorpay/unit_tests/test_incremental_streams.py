@@ -5,7 +5,7 @@
 
 from airbyte_cdk.models import SyncMode
 from pytest import fixture
-from source_razorpay.source import IncrementalRazorpayStream
+from source_razorpay.streams import IncrementalRazorpayStream
 
 
 @fixture
