@@ -7,6 +7,7 @@ The new open-source standard to sync data from applications, APIs & databases to
 
 Airbyte is on a mission to make data integration pipelines a commodity.
 
+
 * **Maintenance-free connectors you can use in minutes**. Just authenticate your sources and warehouse, and get connectors that adapt to schema and API changes for you.
 * **Building new connectors made trivial.** We make it very easy to add new connectors that you need, using the language of your choice, by offering scheduling and orchestration. 
 * Designed to **cover the long tail of connectors and needs**. Benefit from the community's battle-tested connectors and adapt them to your specific needs.
