@@ -38,6 +38,15 @@
         "title": "End Date",
         "examples": ["2022-03-01"],
         "pattern": "^(?:(\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01]))|)$"
+      },
+      "excluded_banks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "A list of banks to exclude from syncs.",
+        "title": "Excluded Banks",
+        "examples": ["BOA", "CITI"]
       }
     }
   }

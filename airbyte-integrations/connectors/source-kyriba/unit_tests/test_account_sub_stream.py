@@ -21,9 +21,26 @@ def patch_base_class(mocker):
 
 def test_get_account_uuids(patch_base_class):
     stream = AccountSubStream(**config())
-    account_records = [{"uuid": "first"}, {"uuid": "second"}]
+    account_records = [{"uuid": "first", "bank": {"code": "BNK"}}, {"uuid": "second", "bank": {"code": "BNK"}}]
     Accounts.read_records = MagicMock(return_value=account_records)
     expected = [{"account_uuid": "first"}, {"account_uuid": "second"}]
+    assert stream.get_account_uuids() == expected
+
+
+def test_get_account_uuids_with_excluded_banks(patch_base_class):
+    config_with_excluded = config()
+    config_with_excluded["excluded_banks"] = ["BOA", "CITI"]
+    stream = AccountSubStream(**config_with_excluded)
+    account_records = [
+        {"uuid": "1111", "bank": {"code": "BOA"}},
+        {"uuid": "2222", "bank": {"code": "BNK"}},
+        {"uuid": "3333", "bank": {"code": "CITI"}},
+        {"uuid": "4444", "bank": {"code": "BOA"}},
+        {"uuid": "5555", "bank": {"code": "BNK"}},
+        {"uuid": "6666", "bank": {"code": "CITI"}},
+    ]
+    Accounts.read_records = MagicMock(return_value=account_records)
+    expected = [{"account_uuid": "2222"}, {"account_uuid": "5555"}]
     assert stream.get_account_uuids() == expected
 
 

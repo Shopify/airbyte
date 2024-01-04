@@ -38,6 +38,7 @@ class KyribaStream(HttpStream):
         client: KyribaClient,
         start_date: str,
         end_date: str = None,
+        excluded_banks: list = [],
     ):
         self.gateway_url = gateway_url
         self.start_date = date.fromisoformat(start_date) or date.today()
@@ -130,9 +131,14 @@ class AccountSubStream(HttpSubStream, KyribaStream):
     def __init__(self, **kwargs):
         super().__init__(parent=Accounts, **kwargs)
         self.parent = Accounts(**kwargs)
+        self.excluded_banks = kwargs.get("excluded_banks", [])
 
     def get_account_uuids(self) -> Iterable[Optional[Mapping[str, str]]]:
-        return [{"account_uuid": a["uuid"]} for a in self.parent.read_records(sync_mode=SyncMode.full_refresh)]
+        return [
+            {"account_uuid": a["uuid"]}
+            for a in self.parent.read_records(sync_mode=SyncMode.full_refresh)
+            if a["bank"]["code"] not in self.excluded_banks
+        ]
 
     def next_page_token(self, response: requests.Response):
         pass
