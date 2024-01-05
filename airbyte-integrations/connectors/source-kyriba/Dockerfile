@@ -1,4 +1,4 @@
-FROM python:3.7.11-alpine3.14 as base
+FROM python:3.9.18-alpine3.19 as base
 
 # build and load all requirements
 FROM base as builder
