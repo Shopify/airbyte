@@ -47,6 +47,7 @@ class KyribaStream(HttpStream):
         self.gateway_url = gateway_url
         self.start_date = date.fromisoformat(start_date) or date.today()
         self.end_date = date.fromisoformat(end_date) if end_date else None
+        self.excluded_banks = excluded_banks
         self.client = client
         super().__init__(self.client.login())
 
@@ -133,6 +134,7 @@ class Accounts(KyribaStream):
 
 class AccountSubStream(HttpSubStream, KyribaStream):
     def __init__(self, **kwargs):
+        logger.info(f"kwargs passed to AccountSubStream: {kwargs}")
         super().__init__(parent=Accounts, **kwargs)
         self.parent = Accounts(**kwargs)
         self.excluded_banks = kwargs.get("excluded_banks", [])
