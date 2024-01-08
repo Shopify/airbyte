@@ -8,11 +8,15 @@ from typing import Any, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 import backoff
 import requests
+from airbyte_cdk import AirbyteLogger
 from airbyte_cdk.models import SyncMode
 from airbyte_cdk.sources import AbstractSource
 from airbyte_cdk.sources.streams import Stream
 from airbyte_cdk.sources.streams.http import HttpStream, HttpSubStream
 from airbyte_cdk.sources.streams.http.requests_native_auth import TokenAuthenticator
+
+
+logger = AirbyteLogger()
 
 
 class KyribaClient:
@@ -134,11 +138,17 @@ class AccountSubStream(HttpSubStream, KyribaStream):
         self.excluded_banks = kwargs.get("excluded_banks", [])
 
     def get_account_uuids(self) -> Iterable[Optional[Mapping[str, str]]]:
-        return [
+        logger.info("Begin debug get_account_uuids()...")
+        logger.info(f"self.excluded_banks: {self.excluded_banks}")
+        accounts = self.parent.read_records(sync_mode=SyncMode.full_refresh)
+        logger.info(f"accounts: {accounts}")
+        accounts_to_sync = [
             {"account_uuid": a["uuid"]}
-            for a in self.parent.read_records(sync_mode=SyncMode.full_refresh)
+            for a in accounts
             if a["bank"]["code"] not in self.excluded_banks
         ]
+        logger.info(f"uuids_to_sync: {accounts_to_sync}")
+        return accounts_to_sync
 
     def next_page_token(self, response: requests.Response):
         pass
