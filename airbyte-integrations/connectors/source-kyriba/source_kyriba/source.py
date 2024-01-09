@@ -134,23 +134,16 @@ class Accounts(KyribaStream):
 
 class AccountSubStream(HttpSubStream, KyribaStream):
     def __init__(self, **kwargs):
-        logger.info(f"kwargs passed to AccountSubStream: {kwargs}")
         super().__init__(parent=Accounts, **kwargs)
         self.parent = Accounts(**kwargs)
         self.excluded_banks = kwargs.get("excluded_banks", [])
 
     def get_account_uuids(self) -> Iterable[Optional[Mapping[str, str]]]:
-        logger.info("Begin debug get_account_uuids()...")
-        logger.info(f"self.excluded_banks: {self.excluded_banks}")
-        accounts = self.parent.read_records(sync_mode=SyncMode.full_refresh)
-        logger.info(f"accounts: {accounts}")
-        accounts_to_sync = [
+        return [
             {"account_uuid": a["uuid"]}
-            for a in accounts
+            for a in self.parent.read_records(sync_mode=SyncMode.full_refresh)
             if a["bank"]["code"] not in self.excluded_banks
         ]
-        logger.info(f"uuids_to_sync: {accounts_to_sync}")
-        return accounts_to_sync
 
     def next_page_token(self, response: requests.Response):
         pass
@@ -300,6 +293,7 @@ class SourceKyriba(AbstractSource):
             "client": client,
             "start_date": config.get("start_date"),
             "end_date": config.get("end_date"),
+            "excluded_banks": config.get("excluded_banks"),
         }
         return [
             Accounts(**kwargs),
