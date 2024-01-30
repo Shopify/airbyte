@@ -4,6 +4,7 @@
 
 
 from airbyte_cdk.models import SyncMode
+from datetime import date, timedelta
 from pytest import fixture
 from source_kyriba.source import IncrementalKyribaStream
 
@@ -70,3 +71,10 @@ def test_min_request_params(patch_incremental_base_class):
     inputs = {"stream_state": {}, "stream_slice": {}, "next_page_token": {}}
     expected = {"sort": "updateDateTime", "filter": "updateDateTime=gt='2022-01-01T00:00:00Z'"}
     assert stream.request_params(**inputs) == expected
+
+
+def test_no_start_date(patch_incremental_base_class):
+    conf = config()
+    conf["start_date"] = None
+    stream = IncrementalKyribaStream(**conf)
+    assert stream.start_date == date.today() - timedelta(days=7)

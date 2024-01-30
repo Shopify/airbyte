@@ -3,7 +3,7 @@
 #
 
 
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import MagicMock
 
 import requests
@@ -98,3 +98,10 @@ def test_parse_response(patch_base_class):
     resp_data = {"results": [{"date": {"updateDateTime": "2022-03-01T00:00:00Z"}}]}
     resp.json = MagicMock(return_value=resp_data)
     assert next(stream.parse_response(resp)) == {"updateDateTime": "2022-03-01T00:00:00Z"}
+
+
+def test_no_start_date(patch_base_class):
+    conf = config()
+    conf["start_date"] = None
+    stream = CashFlows(**conf)
+    assert stream.start_date == date.today() - timedelta(days=7)

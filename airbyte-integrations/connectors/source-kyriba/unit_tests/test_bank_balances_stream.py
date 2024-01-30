@@ -2,7 +2,7 @@
 # Copyright (c) 2022 Airbyte, Inc., all rights reserved.
 #
 
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import MagicMock
 
 import pytest
@@ -75,3 +75,10 @@ def test_request_params(patch_base_class):
         "dateType": "VALUE",
     }
     assert params == expected
+
+
+def test_no_start_date(patch_base_class):
+    conf = config()
+    conf["start_date"] = None
+    stream = CashBalancesStream(**conf)
+    assert stream.start_date == date.today() - timedelta(days=7)
