@@ -40,12 +40,13 @@ class KyribaStream(HttpStream):
         self,
         gateway_url: str,
         client: KyribaClient,
-        start_date: str,
+        start_date: str = None,
         end_date: str = None,
         excluded_banks: list = [],
     ):
+        DEFAULT_START_DATE = (date.today() - timedelta(days=7))
         self.gateway_url = gateway_url
-        self.start_date = date.fromisoformat(start_date) or date.today()
+        self.start_date = DEFAULT_START_DATE if start_date is None else date.fromisoformat(start_date)
         self.end_date = date.fromisoformat(end_date) if end_date else None
         self.excluded_banks = excluded_banks
         self.client = client

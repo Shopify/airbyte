@@ -2,6 +2,7 @@
 # Copyright (c) 2022 Airbyte, Inc., all rights reserved.
 #
 
+from datetime import date, timedelta
 from http import HTTPStatus
 from unittest.mock import MagicMock
 
@@ -119,3 +120,10 @@ def test_unnest(patch_base_class):
     data = {"uuid": "uuid", "nested": {"date": "date"}}
     expected = {"uuid": "uuid", "date": "date"}
     assert stream.unnest("nested", data) == expected
+
+
+def test_no_start_date(patch_base_class):
+    conf = config()
+    conf["start_date"] = None
+    stream = KyribaStream(**conf)
+    assert stream.start_date == date.today() - timedelta(days=7)

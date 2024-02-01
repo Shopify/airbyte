@@ -4,7 +4,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "Kyriba Spec",
     "type": "object",
-    "required": ["domain", "username", "password", "start_date"],
+    "required": ["domain", "username", "password"],
     "additionalProperties": false,
     "properties": {
       "domain": {
@@ -27,7 +27,7 @@
       },
       "start_date": {
         "type": "string",
-        "description": "The date the sync should start from.",
+        "description": "The date the sync should start from. If not set, the sync will start from 7 days ago.",
         "title": "Start Date",
         "examples": ["2021-01-10"],
         "pattern": "^\\d{4}\\-(0[1-9]|1[012])\\-(0[1-9]|[12][0-9]|3[01])$"
