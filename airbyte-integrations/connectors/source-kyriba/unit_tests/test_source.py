@@ -1,18 +1,10 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 from unittest.mock import MagicMock
 
 from source_kyriba.source import KyribaClient, SourceKyriba
-
-
-config = {
-    "username": "username",
-    "password": "password",
-    "domain": "demo.kyriba.com",
-    "start_date": "2022-01-01",
-}
 
 
 def test_check_connection(mocker):

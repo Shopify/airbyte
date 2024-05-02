@@ -1,15 +1,14 @@
 /*
- * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2023 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.mysql;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import io.airbyte.db.jdbc.JdbcDatabase;
-import io.airbyte.integrations.base.JavaBaseConstants;
-import io.airbyte.integrations.destination.StandardNameTransformer;
-import io.airbyte.integrations.destination.jdbc.JdbcSqlOperations;
-import io.airbyte.protocol.models.AirbyteRecordMessage;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.airbyte.cdk.db.jdbc.JdbcDatabase;
+import io.airbyte.cdk.integrations.base.JavaBaseConstants;
+import io.airbyte.cdk.integrations.destination.async.model.PartialAirbyteMessage;
+import io.airbyte.cdk.integrations.destination.jdbc.JdbcSqlOperations;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -17,6 +16,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+@SuppressFBWarnings(
+                    value = {"SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE"},
+                    justification = "There is little chance of SQL injection. There is also little need for statement reuse. The basic statement is more readable than the prepared statement.")
 public class MySQLSqlOperations extends JdbcSqlOperations {
 
   private boolean isLocalFileEnabled = false;
@@ -28,7 +30,7 @@ public class MySQLSqlOperations extends JdbcSqlOperations {
 
   @Override
   public void insertRecordsInternal(final JdbcDatabase database,
-                                    final List<AirbyteRecordMessage> records,
+                                    final List<PartialAirbyteMessage> records,
                                     final String schemaName,
                                     final String tmpTableName)
       throws SQLException {
@@ -48,8 +50,17 @@ public class MySQLSqlOperations extends JdbcSqlOperations {
     }
   }
 
+  @Override
+  protected void insertRecordsInternalV2(final JdbcDatabase database,
+                                         final List<PartialAirbyteMessage> records,
+                                         final String schemaName,
+                                         final String tableName)
+      throws Exception {
+    throw new UnsupportedOperationException("mysql does not yet support DV2");
+  }
+
   private void loadDataIntoTable(final JdbcDatabase database,
-                                 final List<AirbyteRecordMessage> records,
+                                 final List<PartialAirbyteMessage> records,
                                  final String schemaName,
                                  final String tmpTableName,
                                  final File tmpFile)
@@ -71,11 +82,6 @@ public class MySQLSqlOperations extends JdbcSqlOperations {
         throw new RuntimeException(e);
       }
     });
-  }
-
-  @Override
-  protected JsonNode formatData(final JsonNode data) {
-    return StandardNameTransformer.formatJsonPath(data);
   }
 
   void verifyLocalFileEnabled(final JdbcDatabase database) throws SQLException {

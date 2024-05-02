@@ -4,81 +4,31 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": ["string", "null"],
-      "max-length": 40
+      "type": ["string", "null"]
     },
     "customer_id": {
-      "type": ["string", "null"],
-      "max-length": 50
+      "type": ["string", "null"]
     },
     "subscription_id": {
-      "type": ["string", "null"],
-      "max-length": 50
+      "type": ["string", "null"]
     },
     "gateway_account_id": {
-      "type": ["string", "null"],
-      "max-length": 50
+      "type": ["string", "null"]
     },
     "payment_source_id": {
-      "type": ["string", "null"],
-      "max-length": 40
+      "type": ["string", "null"]
     },
     "payment_method": {
-      "type": ["string", "null"],
-      "enum": ["card", "cash", "check"]
+      "type": ["string", "null"]
     },
     "refrence_number": {
-      "type": ["string", "null"],
-      "max-length": 100
+      "type": ["string", "null"]
     },
     "gateway": {
-      "type": ["string", "null"],
-      "enum": [
-        "chargebee",
-        "stripe",
-        "wepay",
-        "braintree",
-        "authorize_net",
-        "paypal_pro",
-        "pin",
-        "eway",
-        "eway_rapid",
-        "worldpay",
-        "balanced_payments",
-        "beanstream",
-        "bluepay",
-        "elavon",
-        "first_data_global",
-        "hdfc",
-        "migs",
-        "nmi",
-        "ogone",
-        "paymill",
-        "paypal_payflow_pro",
-        "sage_pay",
-        "tco",
-        "wirecard",
-        "amazon_payments",
-        "paypal_express_checkout",
-        "gocardless",
-        "adyen",
-        "orbital",
-        "moneris_us",
-        "moneris",
-        "bluesnap",
-        "cybersource",
-        "vantiv",
-        "checkout_com",
-        "paypal",
-        "ingenico_direct",
-        "exact",
-        "mollie",
-        "not_applicable"
-      ]
+      "type": ["string", "null"]
     },
     "type": {
-      "type": ["string", "null"],
-      "enum": ["authorization", "payment", "refund", "payment_reversal"]
+      "type": ["string", "null"]
     },
     "date": {
       "type": ["integer", "null"]
@@ -93,45 +43,28 @@
       "type": ["string", "null"]
     },
     "amount": {
-      "type": ["string", "null"]
+      "type": ["integer", "null"]
     },
     "id_at_gateway": {
-      "type": ["string", "null"],
-      "max-length": 100
+      "type": ["string", "null"]
     },
     "status": {
-      "type": ["string", "null"],
-      "enum": [
-        "in_progress",
-        "success",
-        "voided",
-        "failure",
-        "timeout",
-        "needs_attention"
-      ]
+      "type": ["string", "null"]
     },
     "fraud_flag": {
-      "type": ["string", "null"],
-      "enum": ["safe", "suspicous", "fraudulent"]
+      "type": ["string", "null"]
     },
     "initiator_type": {
-      "type": ["string", "null"],
-      "enum": ["costumer", "merchant"]
+      "type": ["string", "null"]
     },
-    "three_d_source": {
+    "three_d_secure": {
       "type": ["boolean", "null"]
     },
     "authorization_reason": {
-      "type": ["string", "null"],
-      "enum": ["blocking_funds", "verification"]
+      "type": ["string", "null"]
     },
     "error_code": {
-      "type": ["string", "null"],
-      "max-length": 100
-    },
-    "error-text": {
-      "type": ["string", "null"],
-      "max-length": 65000
+      "type": ["string", "null"]
     },
     "voided_at": {
       "type": ["integer", "null"]
@@ -143,49 +76,61 @@
       "type": ["integer", "null"]
     },
     "fraud_reason": {
-      "type": ["string", "null"],
-      "max-length": 250
-    },
-    "amount_unused": {
       "type": ["string", "null"]
     },
+    "amount_unused": {
+      "type": ["integer", "null"]
+    },
     "masked_card_number": {
-      "type": ["string", "null"],
-      "max-length": 20
+      "type": ["string", "null"]
     },
     "reference_transaction_id": {
-      "type": ["string", "null"],
-      "max-length": 40
+      "type": ["string", "null"]
     },
     "refunded_txn_id": {
-      "type": ["string", "null"],
-      "max-length": 40
+      "type": ["string", "null"]
     },
     "reference_authorization_id": {
-      "type": ["string", "null"],
-      "max-length": 40
+      "type": ["string", "null"]
     },
     "amount_capturable": {
       "type": ["integer", "null"]
     },
     "reversal_transaction_id": {
-      "type": ["string", "null"],
-      "max-length": 40
+      "type": ["string", "null"]
     },
     "deleted": {
       "type": ["boolean", "null"]
     },
     "iin": {
-      "type": ["string", "null"],
-      "max-length": 6
+      "type": ["string", "null"]
     },
     "last4": {
-      "type": ["string", "null"],
-      "max-length": 4
+      "type": ["string", "null"]
     },
     "merchant_reference_id": {
-      "type": ["string", "null"],
-      "max-length": 500
+      "type": ["string", "null"]
+    },
+    "base_currency_code": {
+      "type": ["string", "null"]
+    },
+    "business_entity_id": {
+      "type": ["string", "null"]
+    },
+    "object": {
+      "type": ["string", "null"]
+    },
+    "error_text": {
+      "type": ["string", "null"]
+    },
+    "error_detail": {
+      "type": ["string", "null"]
+    },
+    "payment_method_details": {
+      "type": ["string", "null"]
+    },
+    "reference_number": {
+      "type": ["string", "null"]
     },
     "linked_invoices": {
       "type": ["array", "null"],
@@ -193,8 +138,7 @@
         "type": ["object", "null"],
         "properties": {
           "invoice_id": {
-            "type": ["string", "null"],
-            "max-length": 50
+            "type": ["string", "null"]
           },
           "applied_amount": {
             "type": ["integer", "null"]
@@ -209,15 +153,7 @@
             "type": ["integer", "null"]
           },
           "invoice_status": {
-            "type": ["string", "null"],
-            "enum": [
-              "paid",
-              "posted",
-              "payment_due",
-              "not_paid",
-              "voided",
-              "pending"
-            ]
+            "type": ["string", "null"]
           }
         }
       }
@@ -228,8 +164,7 @@
         "type": ["object", "null"],
         "properties": {
           "cn_id": {
-            "type": ["string", "null"],
-            "max-length": 50
+            "type": ["string", "null"]
           },
           "applied_amount": {
             "type": ["integer", "null"]
@@ -238,28 +173,13 @@
             "type": ["integer", "null"]
           },
           "cn_reason_code": {
-            "type": ["string", "null"],
-            "enum": [
-              "write_off",
-              "subscription_change",
-              "subscription_cancellation",
-              "subscription_pause",
-              "chargeback",
-              "product_unsatisfactory",
-              "service_unsatisfactory",
-              "order_change",
-              "order_cancellation",
-              "waiver",
-              "other",
-              "fraudulent"
-            ]
+            "type": ["string", "null"]
           }
         }
       }
     },
     "cn_create_reason_code": {
-      "type": ["string", "null"],
-      "max-length": 100
+      "type": ["string", "null"]
     },
     "cn_date": {
       "type": ["integer", "null"]
@@ -268,12 +188,10 @@
       "type": ["integer", "null"]
     },
     "cn_status": {
-      "type": ["string", "null"],
-      "enum": ["adjusted", "refunded", "refund_due", "voided"]
+      "type": ["string", "null"]
     },
     "cn_reference_invoice_id": {
-      "type": ["string", "null"],
-      "max-length": 50
+      "type": ["string", "null"]
     },
     "linked_refunds": {
       "type": ["array", "null"],
@@ -281,19 +199,10 @@
         "type": ["object", "null"],
         "properties": {
           "txn_id": {
-            "type": ["string", "null"],
-            "max-length": 40
+            "type": ["string", "null"]
           },
           "txn_status": {
-            "type": ["string", "null"],
-            "enum": [
-              "in_progress",
-              "success",
-              "voided",
-              "failure",
-              "timeout",
-              "needs_attention"
-            ]
+            "type": ["string", "null"]
           }
         }
       }
@@ -310,36 +219,16 @@
         "type": ["object", "null"],
         "properties": {
           "id": {
-            "type": ["string", "null"],
-            "max-length": 40
+            "type": ["string", "null"]
           },
           "status": {
-            "type": ["string", "null"],
-            "enum": [
-              "in_progress",
-              "success",
-              "voided",
-              "failure",
-              "timeout",
-              "needs_attention"
-            ]
+            "type": ["string", "null"]
           }
         }
       }
     },
     "custom_fields": {
-      "type": ["null", "array"],
-      "items": {
-        "type": ["null", "object"],
-        "properties": {
-          "name": {
-            "type": ["null", "string"]
-          },
-          "value": {
-            "type": ["null", "string"]
-          }
-        }
-      }
+      "$ref": "_definitions.json#/definitions/custom_fields"
     }
   }
 }

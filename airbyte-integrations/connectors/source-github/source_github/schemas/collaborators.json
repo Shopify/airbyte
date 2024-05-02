@@ -1,9 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$schema": "https://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
     "repository": {
-      "type": ["string"]
+      "type": "string"
     },
     "login": {
       "type": ["null", "string"]
@@ -59,16 +59,25 @@
     "site_admin": {
       "type": ["null", "boolean"]
     },
+    "role_name": {
+      "type": ["null", "string"]
+    },
     "permissions": {
       "type": ["null", "object"],
       "properties": {
-        "pull": {
+        "admin": {
+          "type": ["null", "boolean"]
+        },
+        "maintain": {
           "type": ["null", "boolean"]
         },
         "push": {
           "type": ["null", "boolean"]
         },
-        "admin": {
+        "pull": {
+          "type": ["null", "boolean"]
+        },
+        "triage": {
           "type": ["null", "boolean"]
         }
       }

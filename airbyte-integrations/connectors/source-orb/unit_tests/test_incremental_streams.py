@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 
@@ -8,7 +8,16 @@ import pytest
 import responses
 from airbyte_cdk.models import SyncMode
 from pytest import fixture
-from source_orb.source import CreditsLedgerEntries, Customers, IncrementalOrbStream, OrbStream
+from source_orb.source import (
+    CreditsLedgerEntries,
+    Customers,
+    IncrementalOrbStream,
+    Invoices,
+    OrbStream,
+    Plans,
+    Subscriptions,
+    SubscriptionUsage,
+)
 
 
 @fixture
@@ -89,6 +98,35 @@ def test_request_params(patch_incremental_base_class, mocker, config, current_st
     assert stream.request_params(**inputs) == expected_params
 
 
+@pytest.mark.parametrize(
+    ("config", "current_stream_state", "next_page_token", "expected_params"),
+    [
+        (
+            {},
+            dict(invoice_date="2022-01-25T12:00:00+00:00"),
+            {"cursor": "f96594d0-8220-11ec-a8a3-0242ac120002"},
+            {"invoice_date[gte]": "2022-01-25T12:00:00+00:00", "cursor": "f96594d0-8220-11ec-a8a3-0242ac120002"},
+        ),
+        ({}, dict(invoice_date="2022-01-25T12:00:00+00:00"), None, {"invoice_date[gte]": "2022-01-25T12:00:00+00:00"}),
+        # Honors lookback_window_days
+        (
+            dict(lookback_window_days=3),
+            dict(invoice_date="2022-01-25T12:00:00+00:00"),
+            None,
+            {"invoice_date[gte]": "2022-01-22T12:00:00+00:00"},
+        ),
+        ({}, {}, None, None),
+    ],
+)
+def test_invoices_request_params(patch_incremental_base_class, mocker, config, current_stream_state, next_page_token, expected_params):
+    stream = Invoices(**config)
+    inputs = {"stream_state": current_stream_state, "next_page_token": next_page_token}
+    expected_params = expected_params or {}
+    expected_params["limit"] = OrbStream.page_size
+    expected_params["status[]"] = ["void", "paid", "issued", "synced"]
+    assert stream.request_params(**inputs) == expected_params
+
+
 # We have specific unit tests for CreditsLedgerEntries incremental stream
 # because that employs slicing logic
 
@@ -121,6 +159,29 @@ def test_request_params(patch_incremental_base_class, mocker, config, current_st
 )
 def test_credits_ledger_entries_get_updated_state(mocker, current_stream_state, latest_record, expected_state):
     stream = CreditsLedgerEntries()
+    inputs = {"current_stream_state": current_stream_state, "latest_record": latest_record}
+    assert stream.get_updated_state(**inputs) == expected_state
+
+
+@pytest.mark.parametrize(
+    ("current_stream_state", "latest_record", "expected_state"),
+    [
+        # No state
+        (
+            {},
+            dict(invoice_date="2022-01-26T12:00:00+00:00"),
+            dict(invoice_date="2022-01-26T12:00:00+00:00"),
+        ),
+        # Existing state
+        (
+            dict(invoice_date="2022-01-26T12:00:00+00:00"),
+            dict(invoice_date="2023-01-26T12:00:00+00:00"),
+            dict(invoice_date="2023-01-26T12:00:00+00:00"),
+        ),
+    ],
+)
+def test_invoices_get_updated_state(mocker, current_stream_state, latest_record, expected_state):
+    stream = Invoices()
     inputs = {"current_stream_state": current_stream_state, "latest_record": latest_record}
     assert stream.get_updated_state(**inputs) == expected_state
 
@@ -195,7 +256,7 @@ def test_credits_ledger_entries_transform_record(mocker):
 @responses.activate
 def test_credits_ledger_entries_no_matching_events(mocker):
     stream = CreditsLedgerEntries(string_event_properties_keys=["ping"])
-    ledger_entries = [{"event_id": "foo-event-id", "entry_type": "decrement"}, {"event_id": "bar-event-id", "entry_type": "decrement"}]
+    ledger_entries = [{"event_id": "foo-event-id", "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00"}, {"event_id": "bar-event-id", "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00"}]
     mock_response = {
         "data": [
             {
@@ -215,8 +276,8 @@ def test_credits_ledger_entries_no_matching_events(mocker):
     # We failed to enrich either event, but still check that the schema was
     # transformed as expected
     assert enriched_entries == [
-        {"event": {"id": "foo-event-id"}, "entry_type": "decrement"},
-        {"event": {"id": "bar-event-id"}, "entry_type": "decrement"},
+        {"event": {"id": "foo-event-id"}, "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00"},
+        {"event": {"id": "bar-event-id"}, "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00"},
     ]
 
 
@@ -239,7 +300,7 @@ def test_credits_ledger_entries_enriches_selected_property_keys(
         string_event_properties_keys=selected_string_property_keys, numeric_event_properties_keys=selected_numeric_property_keys
     )
     original_entry_1 = {"entry_type": "increment"}
-    ledger_entries = [{"event_id": "foo-event-id", "entry_type": "decrement"}, original_entry_1]
+    ledger_entries = [{"event_id": "foo-event-id", "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00"}, original_entry_1]
     mock_response = {
         "data": [
             {
@@ -255,7 +316,7 @@ def test_credits_ledger_entries_enriches_selected_property_keys(
     responses.add(responses.POST, f"{stream.url_base}events", json=mock_response, status=200)
     enriched_entries = stream.enrich_ledger_entries_with_event_data(ledger_entries)
 
-    assert enriched_entries[0] == {"entry_type": "decrement", "event": {"id": "foo-event-id", "properties": resulting_properties}}
+    assert enriched_entries[0] == {"entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00", "event": {"id": "foo-event-id", "properties": resulting_properties}}
     # Does not enrich, but still passes back, irrelevant (for enrichment purposes) ledger entry
     assert enriched_entries[1] == original_entry_1
 
@@ -263,7 +324,7 @@ def test_credits_ledger_entries_enriches_selected_property_keys(
 @responses.activate
 def test_credits_ledger_entries_enriches_with_multiple_entries_per_event(mocker):
     stream = CreditsLedgerEntries(string_event_properties_keys=["ping"])
-    ledger_entries = [{"event_id": "foo-event-id", "entry_type": "decrement"}, {"event_id": "foo-event-id", "entry_type": "decrement"}]
+    ledger_entries = [{"event_id": "foo-event-id", "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00",}, {"event_id": "foo-event-id", "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00",}]
     mock_response = {
         "data": [
             {
@@ -281,9 +342,310 @@ def test_credits_ledger_entries_enriches_with_multiple_entries_per_event(mocker)
 
     # We expect both events are enriched correctly
     assert enriched_entries == [
-        {"event": {"id": "foo-event-id", "properties": {"ping": "pong"}}, "entry_type": "decrement"},
-        {"event": {"id": "foo-event-id", "properties": {"ping": "pong"}}, "entry_type": "decrement"},
+        {"event": {"id": "foo-event-id", "properties": {"ping": "pong"}}, "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00",},
+        {"event": {"id": "foo-event-id", "properties": {"ping": "pong"}}, "entry_type": "decrement", "created_at": "2022-02-21T07:00:00+00:00",},
     ]
+
+
+# We have specific unit tests for SubscriptionUsage incremental stream
+# because its logic differs from other IncrementalOrbStreams
+
+
+@pytest.mark.parametrize(
+    ("current_stream_state", "latest_record", "expected_state"),
+    [
+        # Updates for matching customer already in state
+        (
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00")),
+            dict(timeframe_start="2022-01-26T12:00:00+00:00", subscription_id="subscription_id_foo"),
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-26T12:00:00+00:00")),
+        ),
+        # No state for subscription
+        (
+            {},
+            dict(timeframe_start="2022-01-26T12:00:00+00:00", subscription_id="subscription_id_foo"),
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-26T12:00:00+00:00")),
+        ),
+        # State has different subscription than latest record
+        (
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00")),
+            dict(timeframe_start="2022-01-26T12:00:00+00:00", subscription_id="subscription_id_bar"),
+            dict(
+                subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00"),
+                subscription_id_bar=dict(timeframe_start="2022-01-26T12:00:00+00:00"),
+            ),
+        ),
+    ],
+)
+def test_subscription_usage_get_updated_state(mocker, current_stream_state, latest_record, expected_state):
+    stream = SubscriptionUsage(start_date="2022-01-25T12:00:00+00:00", end_date="2022-01-26T12:00:00+00:00")
+    inputs = {"current_stream_state": current_stream_state, "latest_record": latest_record}
+    assert stream.get_updated_state(**inputs) == expected_state
+
+
+def test_subscription_usage_stream_slices(mocker):
+    mocker.patch.object(
+        Subscriptions,
+        "read_records",
+        return_value=iter(
+            [
+                {"id": "1", "plan_id": "2"},
+                {"id": "11", "plan_id": "2"},
+                {"id": "111", "plan_id": "3"},  # should be ignored because plan_id set to 2
+            ]
+        ),
+    )
+    stream = SubscriptionUsage(plan_id="2", start_date="2022-01-25T12:00:00+00:00", end_date="2022-01-26T12:00:00+00:00")
+    inputs = {"sync_mode": SyncMode.incremental, "cursor_field": [], "stream_state": {}}
+    expected_stream_slice = [
+        {"subscription_id": "1", "timeframe_start": "2022-01-25T12:00:00+00:00", "timeframe_end": "2022-01-26T12:00:00+00:00"},
+        {"subscription_id": "11", "timeframe_start": "2022-01-25T12:00:00+00:00", "timeframe_end": "2022-01-26T12:00:00+00:00"},
+    ]
+    assert list(stream.stream_slices(**inputs)) == expected_stream_slice
+
+
+def test_subscription_usage_stream_slices_with_grouping_key(mocker):
+    mocker.patch.object(
+        Subscriptions,
+        "read_records",
+        return_value=iter(
+            [
+                {"id": "1", "plan_id": "2"},
+                {"id": "11", "plan_id": "2"},
+                {"id": "111", "plan_id": "3"},  # should be ignored because plan_id set to 2
+            ]
+        ),
+    )
+
+    mocker.patch.object(
+        Plans,
+        "read_records",
+        return_value=iter(
+            [
+                {"id": "2", "prices": [{"billable_metric": {"id": "billableMetricIdA"}}, {"billable_metric": {"id": "billableMetricIdB"}}]},
+                {"id": "3", "prices": [{"billable_metric": {"id": "billableMetricIdC"}}]},  # should be ignored because plan_id is set to 2
+            ]
+        ),
+    )
+
+    # when a grouping_key is present, one slice per billable_metric is created because the Orb API
+    # requires one API call per billable metric if the group_by param is in use.
+    stream = SubscriptionUsage(
+        plan_id="2",
+        subscription_usage_grouping_key="groupKey",
+        start_date="2022-01-25T12:00:00+00:00",
+        end_date="2022-01-26T12:00:00+00:00",
+    )
+    inputs = {"sync_mode": SyncMode.incremental, "cursor_field": [], "stream_state": {}}
+
+    # one slice per billable metric per subscription that matches the input plan
+    expected_stream_slice = [
+        {
+            "subscription_id": "1",
+            "billable_metric_id": "billableMetricIdA",
+            "timeframe_start": "2022-01-25T12:00:00+00:00",
+            "timeframe_end": "2022-01-26T12:00:00+00:00",
+        },
+        {
+            "subscription_id": "1",
+            "billable_metric_id": "billableMetricIdB",
+            "timeframe_start": "2022-01-25T12:00:00+00:00",
+            "timeframe_end": "2022-01-26T12:00:00+00:00",
+        },
+        {
+            "subscription_id": "11",
+            "billable_metric_id": "billableMetricIdA",
+            "timeframe_start": "2022-01-25T12:00:00+00:00",
+            "timeframe_end": "2022-01-26T12:00:00+00:00",
+        },
+        {
+            "subscription_id": "11",
+            "billable_metric_id": "billableMetricIdB",
+            "timeframe_start": "2022-01-25T12:00:00+00:00",
+            "timeframe_end": "2022-01-26T12:00:00+00:00",
+        },
+    ]
+    assert list(stream.stream_slices(**inputs)) == expected_stream_slice
+
+
+@pytest.mark.parametrize(
+    ("current_stream_state", "current_stream_slice", "grouping_key"),
+    [
+        # Slice matches subscription in state, no grouping
+        (
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00")),
+            dict(
+                subscription_id="subscription_id_foo",
+                timeframe_start="2022-01-25T12:00:00+00:00",
+                timeframe_end="2022-01-26T12:00:00+00:00",
+            ),
+            None,
+        ),
+        # Slice does not match subscription in state, no grouping
+        (
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00")),
+            dict(
+                subscription_id="subscription_id_bar",
+                timeframe_start="2022-01-25T12:00:00+00:00",
+                timeframe_end="2022-01-26T12:00:00+00:00",
+            ),
+            None,
+        ),
+        # No existing state, no grouping
+        (
+            {},
+            dict(
+                subscription_id="subscription_id_baz",
+                timeframe_start="2022-01-25T12:00:00+00:00",
+                timeframe_end="2022-01-26T12:00:00+00:00",
+            ),
+            None,
+        ),
+        # Slice matches subscription in state, with grouping
+        (
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00")),
+            dict(
+                subscription_id="subscription_id_foo",
+                billable_metric_id="billableMetricA",
+                timeframe_start="2022-01-25T12:00:00+00:00",
+                timeframe_end="2022-01-26T12:00:00+00:00",
+            ),
+            "group_key_foo",
+        ),
+        # Slice does not match subscription in state, with grouping
+        (
+            dict(subscription_id_foo=dict(timeframe_start="2022-01-25T12:00:00+00:00")),
+            dict(
+                subscription_id="subscription_id_bar",
+                billable_metric_id="billableMetricA",
+                timeframe_start="2022-01-25T12:00:00+00:00",
+                timeframe_end="2022-01-26T12:00:00+00:00",
+            ),
+            "group_key_foo",
+        ),
+        # No existing state, with grouping
+        (
+            {},
+            dict(
+                subscription_id="subscription_id_baz",
+                billable_metric_id="billableMetricA",
+                timeframe_start="2022-01-25T12:00:00+00:00",
+                timeframe_end="2022-01-26T12:00:00+00:00",
+            ),
+            "group_key_foo",
+        ),
+    ],
+)
+def test_subscription_usage_request_params(mocker, current_stream_state, current_stream_slice, grouping_key):
+    if grouping_key:
+        stream = SubscriptionUsage(
+            start_date="2022-01-25T12:00:00+00:00", end_date="2022-01-26T12:00:00+00:00", subscription_usage_grouping_key=grouping_key
+        )
+    else:
+        stream = SubscriptionUsage(start_date="2022-01-25T12:00:00+00:00", end_date="2022-01-26T12:00:00+00:00")
+
+    inputs = {"stream_state": current_stream_state, "stream_slice": current_stream_slice}
+    expected_params = dict(granularity="day")
+
+    # always pull the timeframe_start and timeframe_end from the stream slice
+    expected_params["timeframe_start"] = current_stream_slice["timeframe_start"]
+    expected_params["timeframe_end"] = current_stream_slice["timeframe_end"]
+
+    # if a grouping_key is present, add the group_by and billable_metric_id to params
+    if grouping_key:
+        expected_params["group_by"] = grouping_key
+        expected_params["billable_metric_id"] = current_stream_slice["billable_metric_id"]
+
+    assert stream.request_params(**inputs) == expected_params
+
+
+def test_subscription_usage_yield_transformed_subrecords(mocker):
+    stream = SubscriptionUsage(start_date="2022-01-25T12:00:00+00:00", end_date="2022-01-26T12:00:00+00:00")
+
+    subscription_usage_response = {
+        "billable_metric": {"name": "Metric A", "id": "billableMetricA"},
+        "usage": [
+            {"quantity": 0, "timeframe_start": "2022-01-25T12:00:00+00:00", "timeframe_end": "2022-01-26T12:00:00+00:00"},
+            {"quantity": 1, "timeframe_start": "2022-01-25T12:00:00+00:00", "timeframe_end": "2022-01-26T12:00:00+00:00"},
+            {"quantity": 2, "timeframe_start": "2022-01-26T12:00:00+00:00", "timeframe_end": "2022-01-27T12:00:00+00:00"},
+        ],
+        "otherTopLevelField": {"shouldBeIncluded": "true"},
+    }
+
+    subscription_id = "subscriptionIdA"
+
+    # Validate that one record is yielded per non-zero usage subrecord
+    expected = [
+        {
+            "quantity": 1,
+            "timeframe_start": "2022-01-25T12:00:00+00:00",
+            "timeframe_end": "2022-01-26T12:00:00+00:00",
+            "billable_metric_name": "Metric A",
+            "billable_metric_id": "billableMetricA",
+            "otherTopLevelField": {"shouldBeIncluded": "true"},
+            "subscription_id": subscription_id,
+        },
+        {
+            "quantity": 2,
+            "timeframe_start": "2022-01-26T12:00:00+00:00",
+            "timeframe_end": "2022-01-27T12:00:00+00:00",
+            "billable_metric_name": "Metric A",
+            "billable_metric_id": "billableMetricA",
+            "otherTopLevelField": {"shouldBeIncluded": "true"},
+            "subscription_id": subscription_id,
+        },
+    ]
+
+    actual_output = list(stream.yield_transformed_subrecords(subscription_usage_response, subscription_id))
+
+    assert actual_output == expected
+
+
+def test_subscription_usage_yield_transformed_subrecords_with_grouping(mocker):
+    stream = SubscriptionUsage(
+        start_date="2022-01-25T12:00:00+00:00", end_date="2022-01-26T12:00:00+00:00", subscription_usage_grouping_key="grouping_key"
+    )
+
+    subscription_usage_response = {
+        "billable_metric": {"name": "Metric A", "id": "billableMetricA"},
+        "metric_group": {"property_key": "grouping_key", "property_value": "grouping_value"},
+        "usage": [
+            {"quantity": 0, "timeframe_start": "2022-01-25T12:00:00+00:00", "timeframe_end": "2022-01-26T12:00:00+00:00"},
+            {"quantity": 1, "timeframe_start": "2022-01-25T12:00:00+00:00", "timeframe_end": "2022-01-26T12:00:00+00:00"},
+            {"quantity": 2, "timeframe_start": "2022-01-26T12:00:00+00:00", "timeframe_end": "2022-01-27T12:00:00+00:00"},
+        ],
+        "otherTopLevelField": {"shouldBeIncluded": "true"},
+    }
+
+    subscription_id = "subscriptionIdA"
+
+    # Validate that one record is yielded per non-zero usage subrecord
+    expected = [
+        {
+            "quantity": 1,
+            "timeframe_start": "2022-01-25T12:00:00+00:00",
+            "timeframe_end": "2022-01-26T12:00:00+00:00",
+            "billable_metric_name": "Metric A",
+            "billable_metric_id": "billableMetricA",
+            "otherTopLevelField": {"shouldBeIncluded": "true"},
+            "subscription_id": subscription_id,
+            "grouping_key": "grouping_value",
+        },
+        {
+            "quantity": 2,
+            "timeframe_start": "2022-01-26T12:00:00+00:00",
+            "timeframe_end": "2022-01-27T12:00:00+00:00",
+            "billable_metric_name": "Metric A",
+            "billable_metric_id": "billableMetricA",
+            "otherTopLevelField": {"shouldBeIncluded": "true"},
+            "subscription_id": subscription_id,
+            "grouping_key": "grouping_value",
+        },
+    ]
+
+    actual_output = list(stream.yield_transformed_subrecords(subscription_usage_response, subscription_id))
+
+    assert actual_output == expected
 
 
 def test_supports_incremental(patch_incremental_base_class, mocker):

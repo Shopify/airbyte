@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
+  "additionalProperties": true,
   "properties": {
     "AccountId": {
       "type": ["null", "integer"]
@@ -14,11 +15,15 @@
     "KeywordId": {
       "type": ["null", "integer"]
     },
+    "Keyword": {
+      "type": ["null", "string"]
+    },
     "AdId": {
       "type": ["null", "integer"]
     },
     "TimePeriod": {
-      "type": ["null", "string"]
+      "type": ["null", "string"],
+      "format": "date"
     },
     "CurrencyCode": {
       "type": ["null", "string"]
@@ -45,6 +50,15 @@
       "type": ["null", "string"]
     },
     "BidMatchType": {
+      "type": ["null", "string"]
+    },
+    "AccountName": {
+      "type": ["null", "string"]
+    },
+    "CampaignName": {
+      "type": ["null", "string"]
+    },
+    "AdGroupName": {
       "type": ["null", "string"]
     },
     "KeywordStatus": {
@@ -160,6 +174,54 @@
     },
     "RevenuePerAssist": {
       "type": ["null", "number"]
+    },
+    "CampaignStatus": {
+      "type": ["null", "string"]
+    },
+    "TopImpressionRatePercent": {
+      "type": ["null", "number"]
+    },
+    "AdGroupStatus": {
+      "type": ["null", "string"]
+    },
+    "TrackingTemplate": {
+      "type": ["null", "string"]
+    },
+    "BidStrategyType": {
+      "type": ["null", "string"]
+    },
+    "AccountStatus": {
+      "type": ["null", "string"]
+    },
+    "FinalUrl": {
+      "type": ["null", "string"]
+    },
+    "AdType": {
+      "type": ["null", "string"]
+    },
+    "KeywordLabels": {
+      "type": ["null", "string"]
+    },
+    "FinalMobileUrl": {
+      "type": ["null", "string"]
+    },
+    "Goal": {
+      "type": ["null", "string"]
+    },
+    "GoalType": {
+      "type": ["null", "string"]
+    },
+    "AbsoluteTopImpressionRatePercent": {
+      "type": ["null", "number"]
+    },
+    "BaseCampaignId": {
+      "type": ["null", "integer"]
+    },
+    "AccountNumber": {
+      "type": ["null", "string"]
+    },
+    "DestinationUrl": {
+      "type": ["null", "string"]
     }
   }
 }

@@ -8,17 +8,20 @@
 
 ## Setup guide
 
+### Step 1: Set up Zendesk
+
 Generate a API access token as described in [Zendesk docs](https://support.zendesk.com/hc/en-us/articles/226022787-Generating-a-new-API-token-)
 
 We recommend creating a restricted, read-only key specifically for Airbyte access. This will allow you to control which resources Airbyte should be able to access.
 
 Another option is to use OAuth2.0 for authentication. See [Zendesk docs](https://support.zendesk.com/hc/en-us/articles/4408845965210-Using-OAuth-authentication-with-your-application) for details.
 
-## Step 2: Set up the Zendesk Talk connector in Airbyte
+<!-- env:cloud -->
+### Step 2: Set up the Zendesk Talk connector in Airbyte
 
-### For Airbyte Cloud:
+**For Airbyte Cloud:**
 
-1. [Log into your Airbyte Cloud](https://cloud.airbyte.io/workspaces) account.
+1. [Log into your Airbyte Cloud](https://cloud.airbyte.com/workspaces) account.
 2. In the left navigation bar, click **Sources**. In the top-right corner, click **+new source**.
 3. On the Set up the source page, enter the name for the Zendesk Talk connector and select **Zendesk Talk** from the Source type dropdown.
 4. Fill in the rest of the fields:
@@ -26,6 +29,7 @@ Another option is to use OAuth2.0 for authentication. See [Zendesk docs](https:/
    - *Authentication (API Token / OAuth2.0)*
    - *Start Date*
 5. Click **Set up source**
+<!-- /env:cloud -->
 
 ## Supported sync modes
 
@@ -66,12 +70,19 @@ The Zendesk connector should not run into Zendesk API limitations under normal u
 | `array`  | `array`  |      |
 | `object` | `object` |      |
 
-
 ## Changelog
 
-
-| Version | Date       | Pull Request | Subject                           |
-|:--------|:-----------| :-----       |:----------------------------------|
-| `0.1.5` | 2022-09-29 | [17362](https://github.com/airbytehq/airbyte/pull/17362) | always use the latest CDK version |
-| `0.1.4` | 2022-08-19 | [15764](https://github.com/airbytehq/airbyte/pull/15764) | Support OAuth2.0                  |
-| `0.1.3` | 2021-11-11 | [7173](https://github.com/airbytehq/airbyte/pull/7173)   | Fix pagination and migrate to CDK |
+| Version | Date       | Pull Request                                             | Subject                                                                     |
+|:--------|:-----------|:---------------------------------------------------------|:----------------------------------------------------------------------------|
+| 0.2.0   | 2024-03-25 | [36459](https://github.com/airbytehq/airbyte/pull/36459) | Unpin CDK version, add record counts in state messages                      |
+| 0.1.13  | 2024-03-04 | [35783](https://github.com/airbytehq/airbyte/pull/35783) | Change order of authentication methods in spec                              |
+| 0.1.12  | 2024-02-12 | [35156](https://github.com/airbytehq/airbyte/pull/35156) | Manage dependencies with Poetry.                                            |
+| 0.1.11  | 2024-01-12 | [34204](https://github.com/airbytehq/airbyte/pull/34204) | Prepare for airbyte-lib                                                     |
+| 0.1.10  | 2023-12-04 | [33030](https://github.com/airbytehq/airbyte/pull/33030) | Base image migration: remove Dockerfile and use python-connector-base image |
+| 0.1.9   | 2023-08-03 | [29031](https://github.com/airbytehq/airbyte/pull/29031) | Reverted `advancedAuth` spec changes                                        |
+| 0.1.8   | 2023-08-01 | [28910](https://github.com/airbytehq/airbyte/pull/28910) | Updated `advancedAuth` broken references                                    |
+| 0.1.7   | 2023-02-10 | [22815](https://github.com/airbytehq/airbyte/pull/22815) | Specified date formatting in specification                                  |
+| 0.1.6   | 2023-01-27 | [22028](https://github.com/airbytehq/airbyte/pull/22028) | Set `AvailabilityStrategy` for streams explicitly to `None`                 |
+| 0.1.5   | 2022-09-29 | [17362](https://github.com/airbytehq/airbyte/pull/17362) | always use the latest CDK version                                           |
+| 0.1.4   | 2022-08-19 | [15764](https://github.com/airbytehq/airbyte/pull/15764) | Support OAuth2.0                                                            |
+| 0.1.3   | 2021-11-11 | [7173](https://github.com/airbytehq/airbyte/pull/7173)   | Fix pagination and migrate to CDK                                           |
