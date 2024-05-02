@@ -8,6 +8,7 @@ from typing import Any, Iterable, List, Mapping, MutableMapping, Optional, Tuple
 
 import backoff
 import requests
+import time
 from airbyte_cdk import AirbyteLogger
 from airbyte_cdk.models import SyncMode
 from airbyte_cdk.sources import AbstractSource
@@ -17,6 +18,7 @@ from airbyte_cdk.sources.streams.http.requests_native_auth import TokenAuthentic
 
 
 logger = AirbyteLogger()
+PER_REQUEST_SLEEP_TIME = 0.6  # To satisfy Kyriba API rate limits, wait 0.6 seconds between requests
 
 
 class KyribaClient:
@@ -95,6 +97,10 @@ class KyribaStream(HttpStream):
         results = response.json().get("results")
         for result in results:
             yield result
+
+    def _send(self):
+        super()._send()
+        time.sleep(PER_REQUEST_SLEEP_TIME)
 
 
 # Basic incremental stream
