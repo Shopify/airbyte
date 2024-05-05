@@ -98,10 +98,10 @@ class KyribaStream(HttpStream):
         for result in results:
             yield result
 
-    def _send(self):
-        super()._send()
-        logger.info(f"Kyriba API request sent, waiting {PER_REQUEST_SLEEP_TIME} seconds...")
+    def _send(self, request: requests.PreparedRequest, request_kwargs: Mapping[str, Any]) -> requests.Response:
+        logger.info(f"Waiting {PER_REQUEST_SLEEP_TIME} seconds before sending Kyriba API request...")
         time.sleep(PER_REQUEST_SLEEP_TIME)
+        return super()._send(request, request_kwargs)
 
 
 # Basic incremental stream
