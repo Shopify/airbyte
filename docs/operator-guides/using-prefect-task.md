@@ -1,12 +1,13 @@
 ---
 description: Start triggering Airbyte jobs with Prefect in minutes
+products: oss-*
 ---
 
 # Using the Prefect Airbyte Task
 
 Airbyte is an official integration Task in the Prefect project. The Airbyte Task allows you to trigger synchronization jobs in Prefect, and this tutorial will walk through configuring your Prefect Flow to do so.
 
-The Airbyte Task documentation on Prefect project can be found [here](https://docs.prefect.io/api/latest/tasks/airbyte.html#airbyteconnectiontask).
+The Airbyte Task documentation on Prefect project can be found [here](https://docs.prefect.io/api/latest/tasks/airbyte.html#airbyteconnectiontask) and the [Prefect 2.0 community guide can be found here](https://www.prefect.io/guide/community-posts/orchestrating-airbyte-with-prefect-2-0/).
 
 ## 1. Set up the tools
 
@@ -90,3 +91,7 @@ Don't be fooled by our simple example of only one Prefect Flow. Airbyte is a pow
 
 We love to hear any questions or feedback on our [Slack](https://slack.airbyte.io/). We're still in alpha, so if you see any rough edges or want to request a connector, feel free to create an issue on our [Github](https://github.com/airbytehq/airbyte) or thumbs up an existing issue.
 
+## Related articles and guides
+For additional information about using Prefect and Airbyte together, see the following:
+
+- [Build an e-commerce analytics stack with Airbyte, dbt, Prefect and BigQuery](https://github.com/airbytehq/quickstarts/tree/main/airbyte_dbt_prefect_bigquery)

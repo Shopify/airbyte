@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 
@@ -40,7 +40,7 @@ class TestAirbyteSpec:
             f.write(json.dumps(self.VALID_SPEC))
             f.flush()
             actual = AirbyteSpec.from_file(f.name)
-            assert expected == json.loads(actual.spec_string)
+            assert json.loads(actual.spec_string) == expected
 
     def test_from_file_nonexistent(self):
         with pytest.raises(OSError):
@@ -66,20 +66,33 @@ def nonempty_file(mock_config):
 
 
 @pytest.fixture
+def nonjson_file(mock_config):
+    with tempfile.NamedTemporaryFile("w") as file:
+        file.write("the content of this file is not JSON")
+        file.flush()
+        yield file
+
+
+@pytest.fixture
 def integration():
     return MockConnector()
 
 
 def test_read_config(nonempty_file, integration: Connector, mock_config):
     actual = integration.read_config(nonempty_file.name)
-    assert mock_config == actual
+    assert actual == mock_config
+
+
+def test_read_non_json_config(nonjson_file, integration: Connector):
+    with pytest.raises(ValueError, match="Could not read json file"):
+        integration.read_config(nonjson_file.name)
 
 
 def test_write_config(integration, mock_config):
     config_path = Path(tempfile.gettempdir()) / "config.json"
     integration.write_config(mock_config, str(config_path))
     with open(config_path, "r") as actual:
-        assert mock_config == json.loads(actual.read())
+        assert json.loads(actual.read()) == mock_config
 
 
 class TestConnectorSpec:
@@ -104,6 +117,14 @@ class TestConnectorSpec:
         os.remove(json_path)
 
     @pytest.fixture
+    def use_invalid_json_spec(self):
+        json_path = os.path.join(SPEC_ROOT, "spec.json")
+        with open(json_path, "w") as f:
+            f.write("the content of this file is not JSON")
+        yield
+        os.remove(json_path)
+
+    @pytest.fixture
     def use_yaml_spec(self):
         spec = {"documentationUrl": "https://airbyte.com/#yaml", "connectionSpecification": self.CONNECTION_SPECIFICATION}
 
@@ -117,6 +138,10 @@ class TestConnectorSpec:
         connector_spec = integration.spec(logger)
         assert connector_spec.documentationUrl == "https://airbyte.com/#json"
         assert connector_spec.connectionSpecification == self.CONNECTION_SPECIFICATION
+
+    def test_spec_from_improperly_formatted_json_file(self, integration, use_invalid_json_spec):
+        with pytest.raises(ValueError, match="Could not read json spec file"):
+            integration.spec(logger)
 
     def test_spec_from_yaml_file(self, integration, use_yaml_spec):
         connector_spec = integration.spec(logger)

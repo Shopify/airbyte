@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+ * Copyright (c) 2023 Airbyte, Inc., all rights reserved.
  */
 
 package io.airbyte.integrations.destination.postgres;
@@ -10,34 +10,47 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.ImmutableMap;
+import io.airbyte.cdk.db.factory.DataSourceFactory;
+import io.airbyte.cdk.db.factory.DatabaseDriver;
+import io.airbyte.cdk.db.jdbc.DefaultJdbcDatabase;
+import io.airbyte.cdk.db.jdbc.JdbcDatabase;
+import io.airbyte.cdk.db.jdbc.JdbcUtils;
+import io.airbyte.cdk.integrations.base.Destination;
+import io.airbyte.cdk.integrations.base.DestinationConfig;
+import io.airbyte.cdk.integrations.base.SerializedAirbyteMessageConsumer;
+import io.airbyte.cdk.testutils.PostgreSQLContainerHelper;
+import io.airbyte.commons.io.IOs;
 import io.airbyte.commons.json.Jsons;
-import io.airbyte.db.jdbc.JdbcDatabase;
-import io.airbyte.db.jdbc.JdbcUtils;
-import io.airbyte.integrations.base.AirbyteMessageConsumer;
-import io.airbyte.integrations.base.Destination;
-import io.airbyte.protocol.models.AirbyteConnectionStatus;
-import io.airbyte.protocol.models.AirbyteMessage;
-import io.airbyte.protocol.models.AirbyteMessage.Type;
-import io.airbyte.protocol.models.AirbyteRecordMessage;
-import io.airbyte.protocol.models.AirbyteStateMessage;
-import io.airbyte.protocol.models.CatalogHelpers;
-import io.airbyte.protocol.models.ConfiguredAirbyteCatalog;
+import io.airbyte.commons.string.Strings;
 import io.airbyte.protocol.models.Field;
 import io.airbyte.protocol.models.JsonSchemaType;
-import io.airbyte.test.utils.PostgreSQLContainerHelper;
+import io.airbyte.protocol.models.v0.AirbyteConnectionStatus;
+import io.airbyte.protocol.models.v0.AirbyteMessage;
+import io.airbyte.protocol.models.v0.AirbyteMessage.Type;
+import io.airbyte.protocol.models.v0.AirbyteRecordMessage;
+import io.airbyte.protocol.models.v0.AirbyteStateMessage;
+import io.airbyte.protocol.models.v0.CatalogHelpers;
+import io.airbyte.protocol.models.v0.ConfiguredAirbyteCatalog;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.MountableFile;
 
+@Timeout(value = 10,
+         unit = TimeUnit.MINUTES)
 public class PostgresDestinationTest {
 
   private static PostgreSQLContainer<?> PSQL_DB;
@@ -109,7 +122,7 @@ public class PostgresDestinationTest {
 
   @BeforeEach
   void setup() {
-    config = PostgreSQLContainerHelper.createDatabaseWithRandomNameAndGetPostgresConfig(PSQL_DB);
+    config = createDatabaseWithRandomNameAndGetPostgresConfig(PSQL_DB);
   }
 
   @AfterAll
@@ -208,7 +221,7 @@ public class PostgresDestinationTest {
 
   @Test
   public void testUserHasNoPermissionToDataBase() throws Exception {
-    final JdbcDatabase database = PostgreSQLContainerHelper.getJdbcDatabaseFromConfig(PostgreSQLContainerHelper.getDataSourceFromConfig(config));
+    final JdbcDatabase database = getJdbcDatabaseFromConfig(getDataSourceFromConfig(config));
 
     database.execute(connection -> connection.createStatement()
         .execute(String.format("create user %s with password '%s';", USERNAME, PASSWORD)));
@@ -233,23 +246,27 @@ public class PostgresDestinationTest {
   @Test
   void sanityTest() throws Exception {
     final Destination destination = new PostgresDestination();
-    final AirbyteMessageConsumer consumer = destination.getConsumer(config, CATALOG, Destination::defaultOutputRecordCollector);
+    DestinationConfig.initialize(config);
+    final SerializedAirbyteMessageConsumer consumer =
+        destination.getSerializedMessageConsumer(config, CATALOG, Destination::defaultOutputRecordCollector);
     final List<AirbyteMessage> expectedRecords = getNRecords(10);
 
     consumer.start();
     expectedRecords.forEach(m -> {
       try {
-        consumer.accept(m);
+        String message = Jsons.serialize(m);
+        consumer.accept(message, message.getBytes(StandardCharsets.UTF_8).length);
       } catch (final Exception e) {
         throw new RuntimeException(e);
       }
     });
-    consumer.accept(new AirbyteMessage()
+    final String stateMessage = Jsons.serialize(new AirbyteMessage()
         .withType(Type.STATE)
         .withState(new AirbyteStateMessage().withData(Jsons.jsonNode(ImmutableMap.of(SCHEMA_NAME + "." + STREAM_NAME, 10)))));
+    consumer.accept(stateMessage, stateMessage.getBytes(StandardCharsets.UTF_8).length);
     consumer.close();
 
-    final JdbcDatabase database = PostgreSQLContainerHelper.getJdbcDatabaseFromConfig(PostgreSQLContainerHelper.getDataSourceFromConfig(config));
+    final JdbcDatabase database = getJdbcDatabaseFromConfig(getDataSourceFromConfig(config));
 
     final List<JsonNode> actualRecords = database.bufferedResultSetQuery(
         connection -> connection.createStatement().executeQuery("SELECT * FROM public._airbyte_raw_id_and_name;"),
@@ -271,6 +288,42 @@ public class PostgresDestinationTest {
                 .withEmittedAt(Instant.now().toEpochMilli())
                 .withData(Jsons.jsonNode(ImmutableMap.of("id", i, "name", "human " + i)))))
         .collect(Collectors.toList());
+  }
+
+  private JdbcDatabase getJdbcDatabaseFromConfig(final DataSource dataSource) {
+    return new DefaultJdbcDatabase(dataSource, JdbcUtils.getDefaultSourceOperations());
+  }
+
+  private JsonNode createDatabaseWithRandomNameAndGetPostgresConfig(final PostgreSQLContainer<?> psqlDb) {
+    final var dbName = Strings.addRandomSuffix("db", "_", 10).toLowerCase();
+    final var initScriptName = "init_" + dbName.concat(".sql");
+    final var tmpFilePath = IOs.writeFileToRandomTmpDir(initScriptName, "CREATE DATABASE " + dbName + ";");
+
+    PostgreSQLContainerHelper.runSqlScript(MountableFile.forHostPath(tmpFilePath), psqlDb);
+    return getDestinationConfig(psqlDb, dbName);
+  }
+
+  private JsonNode getDestinationConfig(final PostgreSQLContainer<?> psqlDb, final String dbName) {
+    return Jsons.jsonNode(ImmutableMap.builder()
+        .put(JdbcUtils.HOST_KEY, psqlDb.getHost())
+        .put(JdbcUtils.PORT_KEY, psqlDb.getFirstMappedPort())
+        .put(JdbcUtils.DATABASE_KEY, dbName)
+        .put(JdbcUtils.USERNAME_KEY, psqlDb.getUsername())
+        .put(JdbcUtils.PASSWORD_KEY, psqlDb.getPassword())
+        .put(JdbcUtils.SCHEMA_KEY, "public")
+        .put(JdbcUtils.SSL_KEY, false)
+        .build());
+  }
+
+  private DataSource getDataSourceFromConfig(final JsonNode config) {
+    return DataSourceFactory.create(
+        config.get(JdbcUtils.USERNAME_KEY).asText(),
+        config.get(JdbcUtils.PASSWORD_KEY).asText(),
+        DatabaseDriver.POSTGRESQL.getDriverClassName(),
+        String.format(DatabaseDriver.POSTGRESQL.getUrlFormatString(),
+            config.get(JdbcUtils.HOST_KEY).asText(),
+            config.get(JdbcUtils.PORT_KEY).asInt(),
+            config.get(JdbcUtils.DATABASE_KEY).asText()));
   }
 
 }

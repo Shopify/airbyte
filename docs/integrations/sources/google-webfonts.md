@@ -22,7 +22,7 @@ Just pass the generated API key and optional parameters for establishing the con
 
 ### For Airbyte Cloud:
 
-1. [Log into your Airbyte Cloud](https://cloud.airbyte.io/workspaces) account.
+1. [Log into your Airbyte Cloud](https://cloud.airbyte.com/workspaces) account.
 2. In the left navigation bar, click **Sources**. In the top-right corner, click **+new source**.
 3. On the Set up the source page, enter the name for the Google-webfonts connector and select **Google-webfonts** from the Source type dropdown.
 4. Enter your `api_key`.
@@ -55,7 +55,7 @@ The Google-webfonts source connector supports the following [sync modes](https:/
 
 ## API method example
 
-GET https://webfonts.googleapis.com/v1/webfonts?key=<1234567>&sort=SORT_UNDEFINED&prettyPrint=true&alt=json
+`GET https://webfonts.googleapis.com/v1/webfonts?key=<1234567>&sort=SORT_UNDEFINED&prettyPrint=true&alt=json`
 
 ## Performance considerations
 
@@ -65,4 +65,7 @@ Google Webfont's [API reference](https://developers.google.com/fonts/docs/develo
 
 | Version | Date       | Pull Request                                           | Subject        |
 | :------ | :--------- | :----------------------------------------------------- | :------------- |
+| 0.1.3 | 2024-04-19 | [37172](https://github.com/airbytehq/airbyte/pull/37172) | Upgrade to CDK 0.80.0 and manage dependencies with Poetry. |
+| 0.1.2 | 2024-04-15 | [37172](https://github.com/airbytehq/airbyte/pull/37172) | Base image migration: remove Dockerfile and use the python-connector-base image |
+| 0.1.1 | 2024-04-12 | [37172](https://github.com/airbytehq/airbyte/pull/37172) | schema descriptions |
 | 0.1.0   | 2022-10-26 | [Init](https://github.com/airbytehq/airbyte/pull/18496)| Initial commit |

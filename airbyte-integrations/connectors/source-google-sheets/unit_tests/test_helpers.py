@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 
@@ -15,11 +15,35 @@ from airbyte_cdk.models.airbyte_protocol import (
     DestinationSyncMode,
     SyncMode,
 )
-from google_sheets_source.client import GoogleSheetsClient
-from google_sheets_source.helpers import Helpers
-from google_sheets_source.models import CellData, GridData, RowData, Sheet, SheetProperties, Spreadsheet
+from source_google_sheets.client import GoogleSheetsClient
+from source_google_sheets.helpers import Helpers
+from source_google_sheets.models import CellData, GridData, RowData, Sheet, SheetProperties, Spreadsheet
 
 logger = AirbyteLogger()
+
+
+def google_sheet_client(row_data, spreadsheet_id, client):
+    fake_response = Spreadsheet(
+        spreadsheetId=spreadsheet_id,
+        sheets=[Sheet(data=[GridData(rowData=row_data)])],
+    )
+    client.get.return_value.execute.return_value = fake_response
+    with patch.object(GoogleSheetsClient, "__init__", lambda s, credentials, scopes: None):
+        sheet_client = GoogleSheetsClient({"fake": "credentials"}, ["auth_scopes"])
+        sheet_client.client = client
+    return sheet_client
+
+
+def google_sheet_invalid_client(spreadsheet_id, client):
+    fake_response = Spreadsheet(
+        spreadsheetId=spreadsheet_id,
+        sheets=[Sheet(data=[])],
+    )
+    client.get.return_value.execute.return_value = fake_response
+    with patch.object(GoogleSheetsClient, "__init__", lambda s, credentials, scopes: None):
+        sheet_client = GoogleSheetsClient({"fake": "credentials"}, ["auth_scopes"])
+        sheet_client.client = client
+    return sheet_client
 
 
 class TestHelpers(unittest.TestCase):
@@ -27,25 +51,21 @@ class TestHelpers(unittest.TestCase):
         sheet_name = "sheet1"
         header_values = ["h1", "h2", "h3"]
 
-        props = {header: {"type": "string"} for header in header_values}
-        props["row_id"] = {"type": "integer"}
         expected_stream = AirbyteStream(
             name=sheet_name,
             json_schema={
                 "$schema": "http://json-schema.org/draft-07/schema#",
                 "type": "object",
-                "required": ["row_id"],
                 # For simplicity, the type of every cell is a string
-                "properties": props,
+                "properties": {header: {"type": "string"} for header in header_values},
             },
-            source_defined_primary_key=[["row_id"]],
             supported_sync_modes=[SyncMode.full_refresh],
         )
 
         actual_stream = Helpers.headers_to_airbyte_stream(logger, sheet_name, header_values)
         self.assertEqual(expected_stream, actual_stream)
 
-    def test_duplicate_headers_retrived(self):
+    def test_duplicate_headers_retrieved(self):
         header_values = ["h1", "h1", "h3"]
 
         expected_valid_header_values = ["h3"]
@@ -61,20 +81,15 @@ class TestHelpers(unittest.TestCase):
         header_values = ["h1", "h1", "h3"]
 
         # h1 is ignored because it is duplicate
-        props = {
-            "h3": {"type": "string"},
-            "row_id": {"type": "integer"},
-        }
+        expected_stream_header_values = ["h3"]
         expected_stream = AirbyteStream(
             name=sheet_name,
             json_schema={
                 "$schema": "http://json-schema.org/draft-07/schema#",
                 "type": "object",
-                "required": ["row_id"],
                 # For simplicity, the type of every cell is a string
-                "properties": props,
+                "properties": {header: {"type": "string"} for header in expected_stream_header_values},
             },
-            source_defined_primary_key=[["row_id"]],
             supported_sync_modes=[SyncMode.full_refresh],
         )
 
@@ -90,11 +105,9 @@ class TestHelpers(unittest.TestCase):
             json_schema={
                 "$schema": "http://json-schema.org/draft-07/schema#",
                 "type": "object",
-                "required": ["row_id"],
                 # For simplicity, the type of every cell is a string
-                "properties": {"h1": {"type": "string"}, "row_id": {"type": "integer"}},
+                "properties": {"h1": {"type": "string"}},
             },
-            source_defined_primary_key=[["row_id"]],
             supported_sync_modes=[SyncMode.full_refresh],
         )
         actual_stream = Helpers.headers_to_airbyte_stream(logger, sheet_name, header_values)
@@ -154,11 +167,10 @@ class TestHelpers(unittest.TestCase):
         sheet = "my_sheet"
         cell_values = ["v1", "v2", "v3", "v4"]
         column_index_to_name = {0: "c1", 3: "c4"}
-        row_id = 1
 
-        actual = Helpers.row_data_to_record_message(sheet, row_id, cell_values, column_index_to_name)
+        actual = Helpers.row_data_to_record_message(sheet, cell_values, column_index_to_name)
 
-        expected = AirbyteRecordMessage(stream=sheet, data={"row_id": row_id, "c1": "v1", "c4": "v4"}, emitted_at=1)
+        expected = AirbyteRecordMessage(stream=sheet, data={"c1": "v1", "c4": "v4"}, emitted_at=1)
         self.assertEqual(expected.stream, actual.stream)
         self.assertEqual(expected.data, actual.data)
 
@@ -174,19 +186,41 @@ class TestHelpers(unittest.TestCase):
         spreadsheet_id = "123"
         sheet = "s1"
         expected_first_row = ["1", "2", "3", "4"]
-        fake_response = Spreadsheet(
-            spreadsheetId=spreadsheet_id,
-            sheets=[Sheet(data=[GridData(rowData=[RowData(values=[CellData(formattedValue=v) for v in expected_first_row])])])],
-        )
-
+        row_data = [RowData(values=[CellData(formattedValue=v) for v in expected_first_row])]
         client = Mock()
-        client.get.return_value.execute.return_value = fake_response
-        with patch.object(GoogleSheetsClient, "__init__", lambda s, credentials, scopes: None):
-            sheet_client = GoogleSheetsClient({"fake": "credentials"}, ["auth_scopes"])
-            sheet_client.client = client
+        sheet_client = google_sheet_client(row_data, spreadsheet_id, client)
         actual = Helpers.get_first_row(sheet_client, spreadsheet_id, sheet)
         self.assertEqual(expected_first_row, actual)
         client.get.assert_called_with(spreadsheetId=spreadsheet_id, includeGridData=True, ranges=f"{sheet}!1:1")
+
+    def test_get_first_row_empty_sheet(self):
+        spreadsheet_id = "123"
+        sheet = "s1"
+        row_data = []
+        client = Mock()
+        sheet_client = google_sheet_client(row_data, spreadsheet_id, client)
+        self.assertEqual(Helpers.get_first_row(sheet_client, spreadsheet_id, sheet), [])
+        client.get.assert_called_with(spreadsheetId=spreadsheet_id, includeGridData=True, ranges=f"{sheet}!1:1")
+
+    def test_check_sheet_is_valid(self):
+        spreadsheet_id = "123"
+        sheet = "s1"
+        expected_first_row = ["1", "2", "3", "4"]
+        row_data = [RowData(values=[CellData(formattedValue=v) for v in expected_first_row])]
+        client = Mock()
+        sheet_client = google_sheet_client(row_data, spreadsheet_id, client)
+        is_valid, reason = Helpers.check_sheet_is_valid(sheet_client, spreadsheet_id, sheet)
+        self.assertTrue(is_valid)
+        self.assertEqual(reason, "")
+
+    def test_check_sheet_is_valid_empty(self):
+        spreadsheet_id = "123"
+        sheet = "s1"
+        client = Mock()
+        sheet_client = google_sheet_invalid_client(spreadsheet_id, client)
+        is_valid, reason = Helpers.check_sheet_is_valid(sheet_client, spreadsheet_id, sheet)
+        self.assertFalse(is_valid)
+        self.assertEqual(reason, "Expected data for exactly one range for sheet s1")
 
     def test_get_sheets_in_spreadsheet(self):
         spreadsheet_id = "id1"
@@ -232,10 +266,36 @@ class TestHelpers(unittest.TestCase):
         with patch.object(GoogleSheetsClient, "__init__", lambda s, credentials, scopes: None):
             sheet_client = GoogleSheetsClient({"fake": "credentials"}, ["auth_scopes"])
             sheet_client.client = client
-        actual = Helpers.get_available_sheets_to_column_index_to_name(
-            sheet_client, spreadsheet_id, {sheet1: frozenset(sheet1_first_row), "doesnotexist": frozenset(["1", "2"])}
-        )
+
         expected = {sheet1: {0: "1", 1: "2", 2: "3", 3: "4"}}
+
+        # names_conversion = False
+        actual = Helpers.get_available_sheets_to_column_index_to_name(
+            client=sheet_client,
+            spreadsheet_id=spreadsheet_id,
+            requested_sheets_and_columns={sheet1: frozenset(sheet1_first_row), "doesnotexist": frozenset(["1", "2"])},
+        )
+        self.assertEqual(expected, actual)
+
+        # names_conversion = False, with null header cell
+        sheet1_first_row = ["1", "2", "3", "4", None]
+        expected = {sheet1: {0: "1", 1: "2", 2: "3", 3: "4", 4: None}}
+        actual = Helpers.get_available_sheets_to_column_index_to_name(
+            client=sheet_client,
+            spreadsheet_id=spreadsheet_id,
+            requested_sheets_and_columns={sheet1: frozenset(sheet1_first_row), "doesnotexist": frozenset(["1", "2"])},
+        )
+        self.assertEqual(expected, actual)
+
+        # names_conversion = True, with null header cell
+        sheet1_first_row = ["AB", "Some Header", "Header", "4", "1MyName", None]
+        expected = {sheet1: {0: "ab", 1: "some_header", 2: "header", 3: "_4", 4: "_1_my_name", 5: None}}
+        actual = Helpers.get_available_sheets_to_column_index_to_name(
+            client=sheet_client,
+            spreadsheet_id=spreadsheet_id,
+            requested_sheets_and_columns={sheet1: frozenset(sheet1_first_row), "doesnotexist": frozenset(["1", "2"])},
+            names_conversion=True,
+        )
 
         self.assertEqual(expected, actual)
 
@@ -248,15 +308,11 @@ class TestHelpers(unittest.TestCase):
         result = Helpers.get_spreadsheet_id(test_url)
         self.assertEqual("18vWlVH8BfjGa-gwYGdV1BjcPP9re66xI8uJK25dtY9Q", result)
 
-        test_url = "http://docs.google.com/spreadsheets/d/18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q/"
+        test_url = "https://docs.google.com/spreadsheets/d/18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q/"
         result = Helpers.get_spreadsheet_id(test_url)
         self.assertEqual("18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q", result)
 
-        test_url = "http://docs.google.com/spreadsheets/d/18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q/#"
-        result = Helpers.get_spreadsheet_id(test_url)
-        self.assertEqual("18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q", result)
-
-        test_url = "http://docs.google.com/spreadsheets/d/18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q"
+        test_url = "https://docs.google.com/spreadsheets/d/18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q/#"
         result = Helpers.get_spreadsheet_id(test_url)
         self.assertEqual("18vWlVH8BfjGegwY_GdV1BjcPP9re_6xI8uJ-25dtY9Q", result)
 

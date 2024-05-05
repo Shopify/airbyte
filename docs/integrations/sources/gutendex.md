@@ -34,12 +34,14 @@ ___
 
 Lists of book information in the Project Gutenberg database are queried using the API at /books (e.g. gutendex.com/books). Book data will be returned in the format:-
 
-    {
-        "count": <number>,
-        "next": <string or null>,
-        "previous": <string or null>,
-        "results": <array of Books>
-    }
+```
+{
+    "count": <number>,
+    "next": <string or null>,
+    "previous": <string or null>,
+    "results": <array of Books>
+}
+```
 
 where `results` is an array of 0-32 book objects, next and previous are URLs to the next and previous pages of results, and count in the total number of books for the query on all pages combined.
 
@@ -53,7 +55,7 @@ The source is capable of syncing the results stream.
 
 ### For Airbyte Cloud:
 
-1. [Log into your Airbyte Cloud](https://cloud.airbyte.io/workspaces) account.
+1. [Log into your Airbyte Cloud](https://cloud.airbyte.com/workspaces) account.
 2. In the left navigation bar, click **Sources**. In the top-right corner, click **+new source**.
 3. On the Set up the source page, select **Gutendex** from the Source type dropdown.
 4. Click **Set up source**.

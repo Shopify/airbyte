@@ -28,7 +28,7 @@ Rocket.chat APIs are under rate limits for the number of API calls allowed per A
 
 ### Requirements
 
-You need to setup a personal access token within the Rocket.chat workspace, see [here](https://docs.rocket.chat/guides/user-guides/user-panel/managing-your-account/personal-access-token) for step-by-step.
+You need to setup a personal access token within the Rocket.chat workspace, see [here](https://docs.rocket.chat/use-rocket.chat/user-guides/user-panel/my-account#personal-access-tokens) for step-by-step.
 
 - token
 - user_id
@@ -37,5 +37,5 @@ You need to setup a personal access token within the Rocket.chat workspace, see 
 ## Changelog
 
 | Version | Date       | Pull Request                                              | Subject                                       |
-| :-----* | :--------* | :-------------------------------------------------------* | :----------------------------------------*    |
+| :------ | :--------- | :-------------------------------------------------------- | :-----------------------------------------    |
 | 0.1.0   | 2022-10-29 | [#18635](https://github.com/airbytehq/airbyte/pull/18635) | 🎉 New Source: Rocket.chat API [low-code CDK] |

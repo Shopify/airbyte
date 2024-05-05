@@ -10,6 +10,36 @@
         "properties": {
           "type": {
             "type": ["null", "string"]
+          },
+          "block_id": {
+            "type": ["null", "string"]
+          },
+          "elements": {
+            "type": ["null", "array"],
+            "items": {
+              "type": ["null", "object"],
+              "additionalProperties": true,
+              "properties": {
+                "elements": {
+                  "type": ["null", "array"],
+                  "items": {
+                    "type": ["null", "object"],
+                    "additionalProperties": true,
+                    "properties": {
+                      "text": {
+                        "type": ["null", "string"]
+                      },
+                      "type": {
+                        "type": ["null", "string"]
+                      }
+                    }
+                  }
+                },
+                "type": {
+                  "type": ["null", "string"]
+                }
+              }
+            }
           }
         },
         "type": ["null", "object"]
@@ -38,7 +68,7 @@
           "type": ["null", "string"]
         },
         "updated": {
-          "type": ["null", "string"]
+          "type": ["null", "integer"]
         }
       },
       "type": ["null", "object"]
@@ -100,8 +130,7 @@
       "type": ["null", "boolean"]
     },
     "last_read": {
-      "type": ["null", "string"],
-      "format": "date-time"
+      "type": ["null", "string"]
     },
     "latest_reply": {
       "type": ["null", "string"]
@@ -187,6 +216,9 @@
     },
     "float_ts": {
       "type": ["null", "number"]
+    },
+    "is_locked": {
+      "type": ["null", "boolean"]
     },
     "type": {
       "type": ["null", "string"]

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 Airbyte, Inc., all rights reserved.
+# Copyright (c) 2023 Airbyte, Inc., all rights reserved.
 #
 
 from unittest.mock import MagicMock
@@ -13,6 +13,18 @@ def test_check_connection(mock_auth, mock_stream, mock_response, config):
     source = SourceXero()
     logger_mock, config_mock = MagicMock(), config
     assert source.check_connection(logger_mock, config_mock) == (True, None)
+
+
+def test_check_connection_failed(mock_auth, mock_stream, mock_response, config, requests_mock):
+    mock_stream("Organisation", response={"Organisations": [{"OrganisationID": "tenant_id"}]})
+    mock_auth({"access_token": "TOKEN", "expires_in": 123})
+
+    requests_mock.get(url="https://api.xero.com/api.xro/2.0/Organisation", status_code=403, content= b'{"status": 403, "code": "restricted_resource"}')
+
+    source = SourceXero()
+    check_succeeded, error = source.check_connection(MagicMock(), config)
+    assert check_succeeded is False
+    assert 'For oauth2 authentication try to re-authenticate and allow all requested scopes' in error
 
 
 def test_streams(config):

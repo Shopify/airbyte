@@ -4,20 +4,16 @@
   "type": "object",
   "properties": {
     "id": {
-      "type": ["string", "null"],
-      "max-length": 100
+      "type": ["string", "null"]
     },
     "name": {
-      "type": ["string", "null"],
-      "max-length": 50
+      "type": ["string", "null"]
     },
     "invoice_name": {
-      "type": ["string", "null"],
-      "max-length": 100
+      "type": ["string", "null"]
     },
     "discount_type": {
-      "type": ["string", "null"],
-      "enum": ["fixed_amount", "percentage"]
+      "type": ["string", "null"]
     },
     "discount_percentage": {
       "type": ["number", "null"]
@@ -26,12 +22,13 @@
       "type": ["integer", "null"]
     },
     "currency_code": {
-      "type": ["string", "null"],
-      "max-length": 3
+      "type": ["string", "null"]
     },
     "duration_type": {
-      "type": ["string", "null"],
-      "enum": ["one_time", "forever", "limited_period"]
+      "type": ["string", "null"]
+    },
+    "duration_month": {
+      "type": ["integer", "null"]
     },
     "valid_till": {
       "type": ["integer", "null"]
@@ -40,12 +37,13 @@
       "type": ["integer", "null"]
     },
     "status": {
-      "type": ["string", "null"],
-      "enum": ["active", "expired", "archived", "deleted"]
+      "type": ["string", "null"]
+    },
+    "apply_discount_on": {
+      "type": ["string", "null"]
     },
     "apply_on": {
-      "type": ["string", "null"],
-      "enum": ["invoice_amount", "each_specified_item"]
+      "type": ["string", "null"]
     },
     "created_at": {
       "type": ["integer", "null"]
@@ -63,15 +61,16 @@
       "type": ["integer", "null"]
     },
     "period_unit": {
-      "type": ["string", "null"],
-      "enum": ["day", "week", "month", "year"]
+      "type": ["string", "null"]
     },
     "redemptions": {
       "type": ["integer", "null"]
     },
     "invoice_notes": {
-      "type": ["string", "null"],
-      "max-length": 2000
+      "type": ["string", "null"]
+    },
+    "object": {
+      "type": ["string", "null"]
     },
     "item_constraints": {
       "type": ["array", "null"],
@@ -79,12 +78,10 @@
         "type": ["object", "null"],
         "properties": {
           "item_type": {
-            "type": ["string", "null"],
-            "enum": ["plan", "addon", "charge"]
+            "type": ["string", "null"]
           },
           "constraint": {
-            "type": ["string", "null"],
-            "enum": ["none", "all", "specific", "criteria"]
+            "type": ["string", "null"]
           },
           "item_price_ids": {
             "type": ["array", "null"],
@@ -99,8 +96,7 @@
         "type": ["object", "null"],
         "properties": {
           "item_type": {
-            "type": ["string", "null"],
-            "enum": ["plan", "addon", "charge"]
+            "type": ["string", "null"]
           },
           "currencies": {
             "type": ["array", "null"],
@@ -117,19 +113,25 @@
         }
       }
     },
-    "custom_fields": {
-      "type": ["null", "array"],
+    "coupon_constraints": {
+      "type": ["array", "null"],
       "items": {
-        "type": ["null", "object"],
+        "type": ["object", "null"],
         "properties": {
-          "name": {
-            "type": ["null", "string"]
+          "entity_type": {
+            "type": ["string", "null"]
           },
-          "value": {
-            "type": ["null", "string"]
+          "type": {
+            "type": ["string", "null"]
+          },
+          "vlaue": {
+            "type": ["string", "null"]
           }
         }
       }
+    },
+    "custom_fields": {
+      "$ref": "_definitions.json#/definitions/custom_fields"
     }
   }
 }
