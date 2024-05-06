@@ -51,7 +51,7 @@ setup(
         "jsonschema~=3.2.0",
         "jsonref~=0.2",
         "pendulum",
-        "pydantic~=1.9.2",
+        "pydantic>=1.9.2,<2.8.0",
         "python-dateutil",
         "PyYAML~=5.4",
         "requests",
