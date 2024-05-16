@@ -8,7 +8,7 @@ The new open-source standard to sync data from applications, APIs & databases to
 Airbyte is on a mission to make data integration pipelines a commodity.
 
 - **Maintenance-free connectors you can use in minutes**. Just authenticate your sources and warehouse, and get connectors that adapt to schema and API changes for you.
-- **Building new connectors made trivial.** We make it very easy to add new connectors that you need, using the language of your choice, by offering scheduling and orchestration.
+- **Building new connectors made it trivial.** We make it very easy to add new connectors that you need, using the language of your choice, by offering scheduling and orchestration.
 - Designed to **cover the long tail of connectors and needs**. Benefit from the community's battle-tested connectors and adapt them to your specific needs.
 - **Your data stays in your cloud**. Have full control over your data, and the costs of your data transfers.
 - **No more security compliance process** to go through as Airbyte is self-hosted.
@@ -31,7 +31,7 @@ Here is a [step-by-step guide](https://github.com/airbytehq/airbyte/tree/e378d40
 ## Features
 
 - **Built for extensibility**: Adapt an existing connector to your needs or build a new one with ease.
-- **Optional normalized schemas**: Entirely customizable, start with raw data or from some suggestion of normalized data.
+- **Optional normalized schemas**: Entirely customizable, starting with raw data or from some suggestion of normalized data.
 - **Full-grade scheduler**: Automate your replications with the frequency you need.
 - **Real-time monitoring**: We log all errors in full detail to help you understand.
 - **Incremental updates**: Automated replications are based on incremental updates to reduce your data transfer costs.
@@ -66,7 +66,7 @@ For general help using Airbyte, please refer to the official Airbyte documentati
 
 Airbyte takes security issues very seriously. If you have any concerns about Airbyte or believe you have uncovered a vulnerability, please get in touch via the e-mail address security@airbyte.io. In the message, try to provide a description of the issue and ideally a way of reproducing it. The security team will get back to you as soon as possible.
 
-Note that this security address should be used only for undisclosed vulnerabilities. Dealing with fixed issues or general questions on how to use the security features should be handled regularly via the user and the dev lists. Please report any security problems to us before disclosing it publicly.
+Note that this security address should be used only for undisclosed vulnerabilities. Dealing with fixed issues or general questions on how to use the security features should be handled regularly via the user and the dev lists. Please report any security problems to us before disclosing them publicly.
 
 ## Roadmap
 
