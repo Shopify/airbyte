@@ -210,7 +210,23 @@ allprojects {
 
 // Java projects common configurations
 subprojects { subproj ->
-
+    configurations.all {
+        resolutionStrategy {
+            force 'org.apache.parquet:parquet-common:1.15.1'
+            force 'org.apache.parquet:parquet-encoding:1.15.1'
+            force 'org.apache.parquet:parquet-column:1.15.1'
+            force 'org.apache.parquet:parquet-hadoop:1.15.1'
+            force 'org.apache.parquet:parquet-avro:1.15.1'
+            force 'org.apache.parquet:parquet-format-structures:1.15.1'
+            
+            // Ensure all transitive dependencies also use 1.15+
+            eachDependency { DependencyResolveDetails details ->
+                if (details.requested.group == 'org.apache.parquet') {
+                    details.useVersion '1.15.1'
+                }
+            }
+        }
+    }
 
     configurations {
         runtimeClasspath
