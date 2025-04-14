@@ -5,7 +5,7 @@
 
 from setuptools import find_packages, setup
 
-MAIN_REQUIREMENTS = ["cryptography", "requests", "pyjwt~=2.3.0"]
+MAIN_REQUIREMENTS = ["cryptography", "requests", "pyjwt>=2.3,<2.9"]
 
 TEST_REQUIREMENTS = ["requests-mock"]
 
